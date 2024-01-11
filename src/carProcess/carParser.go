@@ -12,43 +12,19 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var (
-	mainLink string = "https://platesmania.com"
-)
-
 type Car struct {
-	//funcstion in struct
 	PlateNumber string `json:"PlateNumber"`
 	BigPhotoURL string `json:"BigPhotoURL"`
 	PlatePhoto  string `json:"PlatePhoto"`
 	Model       string `json:"Model"`
 }
 
-func (c *Car) setCarChars(doc *goquery.Document) {
-	c.Model = c.getCarModel(doc)
-	c.PlatePhoto = c.getCarPlatePhoto(doc)
-	c.BigPhotoURL = c.getCarFullPhoto(doc)
-	c.PlateNumber = c.getCarNumber(doc)
-}
-
-func (c *Car) getCarModel(doc *goquery.Document) string {
-	selector := ".col-md-6.col-sm-7 .panel-body .text-center.margin-bottom-10"
-	return c.getDataFromDoc(doc, selector, "")
-}
-
-func (c *Car) getCarFullPhoto(doc *goquery.Document) string {
-	selector := ".col-md-6.col-sm-7 .panel-body a"
-	return mainLink + c.getDataFromDoc(doc, selector, "href")
-}
-
-func (c *Car) getCarPlatePhoto(doc *goquery.Document) string {
-	selector := ".col-md-6.col-sm-7 .panel-body .img-responsive.center-block.margin-bottom-20"
-	return c.getDataFromDoc(doc, selector, "src")
-}
-
-func (c *Car) getCarNumber(doc *goquery.Document) string {
-	selector := ".breadcrumbs .col-xs-12 h1"
-	return c.getDataFromDoc(doc, selector, "")
+func (c *Car) getCarChars(doc goquery.Document) {
+	selector := ".col-md-6.col-sm-7 .panel-body "
+	c.Model = c.getDataFromDoc(&doc, selector+".text-center.margin-bottom-10", "")
+	c.BigPhotoURL = c.getDataFromDoc(&doc, selector+"a", "href")
+	c.PlatePhoto = c.getDataFromDoc(&doc, selector+".img-responsive.center-block.margin-bottom-20", "src")
+	c.PlateNumber = c.getDataFromDoc(&doc, ".breadcrumbs .col-xs-12 h1", "")
 }
 
 func (c *Car) getDataFromDoc(doc *goquery.Document, selector string, attr string) string {
@@ -84,9 +60,9 @@ func ManageCarData(response *http.Response, country string, page int) {
 	}
 
 	car := Car{}
-	car.setCarChars(doc)
+	car.getCarChars(*doc)
 	//creating a folder in the application root
-	dir := path.Join("..", "data", country, fmt.Sprint(page))
+	dir := path.Join("data", country, fmt.Sprint(page))
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		log.Fatal(err)
 	}

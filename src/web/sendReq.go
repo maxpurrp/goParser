@@ -1,30 +1,16 @@
 package web
 
 import (
-	"crypto/tls"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sync"
 	"time"
 
-	carProcess "parser/carProcess"
+	vars "parser/src"
+	"parser/src/carProcess"
 
 	"github.com/PuerkitoBio/goquery"
-)
-
-var (
-	tr *http.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			MaxVersion: tls.VersionTLS13,
-		},
-	}
-	client *http.Client = &http.Client{
-		Transport: tr,
-	}
-	pages        int    = 10
-	mainLink     string = "https://platesmania.com/"
-	wg           sync.WaitGroup
-	maxCountGour int = 2
 )
 
 func checkErr(err error) {
@@ -40,32 +26,29 @@ func SendReq(url string) *http.Response {
 		checkErr(err)
 		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Edge/97.0.1072.71 Yandex/22.1.2.155 Safari/537.36")
 		req.Header.Set("Accept", "text/html, application/xhtml+xml, application/xml;q=0.8, image/webp, */*;q=0.9")
-		res, err = client.Do(req)
+		res, err = vars.Client.Do(req)
 		checkErr(err)
-		if res.StatusCode == http.StatusOK {
+		switch res.StatusCode {
+		case 200:
 			return res
-		} else {
-			time.Sleep(500 * time.Millisecond)
+		case 429:
+			time.Sleep(2 * time.Second)
 		}
+		randTime := rand.Intn(251) + 250
+		time.Sleep(time.Duration(randTime) * time.Millisecond)
 	}
 }
 
-func GetBody(country string, wgMain *sync.WaitGroup, chMain chan struct{}) {
-	defer wgMain.Done()
-
-	ch := make(chan struct{}, maxCountGour)
-	defer close(ch)
-
-	for i := 0; i < pages; i++ {
+func GetBody(country string) {
+	var wg sync.WaitGroup
+	for i := 0; i < vars.Pages; i++ {
 		wg.Add(1)
-
-		ch <- struct{}{}
 
 		var URL string
 		if i == 0 {
-			URL = fmt.Sprintf(mainLink+"%s/gallery", country)
+			URL = fmt.Sprintf(vars.MainLink+"%s/gallery", country)
 		} else {
-			URL = fmt.Sprintf(mainLink+"%s/gallery-%d", country, i)
+			URL = fmt.Sprintf(vars.MainLink+"%s/gallery-%d", country, i)
 		}
 
 		go func(URL string, i int) {
@@ -75,15 +58,15 @@ func GetBody(country string, wgMain *sync.WaitGroup, chMain chan struct{}) {
 
 			links := getLinks(response, country)
 			for _, link := range links {
-				response = SendReq(mainLink + link)
+				response = SendReq(vars.MainLink + link)
 				carProcess.ManageCarData(response, country, i+1)
 			}
-			<-ch
 		}(URL, i)
 
+		if (i+1)%2 == 0 {
+			wg.Wait()
+		}
 	}
-	<-chMain
-	wg.Wait()
 }
 
 func getLinks(response *http.Response, country string) []string {
