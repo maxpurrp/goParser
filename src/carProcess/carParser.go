@@ -24,7 +24,7 @@ type Car struct {
 	Model       string `json:"Model"`
 }
 
-func (c *Car) SetCarChars(doc *goquery.Document) {
+func (c *Car) setCarChars(doc *goquery.Document) {
 	c.Model = c.getCarModel(doc)
 	c.PlatePhoto = c.getCarPlatePhoto(doc)
 	c.BigPhotoURL = c.getCarFullPhoto(doc)
@@ -84,7 +84,7 @@ func ManageCarData(response *http.Response, country string, page int) {
 	}
 
 	car := Car{}
-	car.SetCarChars(doc)
+	car.setCarChars(doc)
 	//creating a folder in the application root
 	dir := path.Join("..", "data", country, fmt.Sprint(page))
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
