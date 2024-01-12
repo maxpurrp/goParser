@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	vars "parser/pkg"
+	"parser/pkg/carProcess"
 	"sync"
 	"time"
-
-	vars "parser/src"
-	"parser/src/carProcess"
 
 	"github.com/PuerkitoBio/goquery"
 )

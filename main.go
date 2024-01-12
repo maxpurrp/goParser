@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	vars "parser/src"
-	"parser/src/web"
+	vars "parser/pkg"
+	"parser/pkg/web"
 )
 
 func main() {
